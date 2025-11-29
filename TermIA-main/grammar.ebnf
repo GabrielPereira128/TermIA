@@ -1,0 +1,18 @@
+(* TermIA - Gramática inicial (EBNF) *)
+(* Objetivo: reconhecer comandos básicos de SO e esqueleto de IA *)
+(* Semana 1: Gramática *)
+command        = sys_command | ia_command | "exit" ;
+
+sys_command    = "ls" [ path ] 
+               | "mkdir" name 
+               | "cd" path ;
+
+ia_command     = "ia" ( ia_ask | ia_summarize | ia_codeexplain ) ;
+
+ia_ask         = "ask" string ;
+ia_summarize   = "summarize" string ;
+ia_codeexplain = "codeexplain" ( string | path | name ) ;
+
+path           = name { "/" name } ;
+name           = ? sequence of letters, digits, ".", "_", "-" ? ;
+string         = '"' { ? any char except '"' ? } '"' ;
