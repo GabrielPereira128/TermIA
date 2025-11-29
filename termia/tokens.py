@@ -1,17 +1,11 @@
-"""
-Lexer do TermIA (parcial) usando PLY (lex).
-Reconhece tokens básicos para comandos de SO e IA.
-"""
 import ply.lex as lex
 
-# Lista de tokens
 tokens = (
     "LS", "MKDIR", "CD", "EXIT",
     "IA", "ASK", "SUMMARIZE", "CODEEXPLAIN",
-    "STRING", "PATH", "NAME",
+    "STRING", "MSTRING", "PATH", "NAME","HELP",
 )
 
-# Palavras-chave (case-sensitive; se quiser case-insensitive, faça .lower())
 reserved = {
     "ls": "LS",
     "mkdir": "MKDIR",
@@ -21,23 +15,69 @@ reserved = {
     "ask": "ASK",
     "summarize": "SUMMARIZE",
     "codeexplain": "CODEEXPLAIN",
+    "help": "HELP",
 }
 
-t_ignore = ' \t'
+# ------------------------------------------------------------
+# Estados do lexer
+# ------------------------------------------------------------
+states = (
+    ("RAW", "exclusive"),   # para MSTRING
+)
 
+t_RAW_ignore = ' \t'
+
+
+t_ignore = " \t"
+
+# ------------------------------------------------------------
+# Início de MSTRING: detecta """ e entra em estado RAW
+# ------------------------------------------------------------
+def t_start_MSTRING(t):
+    r'"""'
+    t.lexer.raw_buffer = []
+    t.lexer.push_state("RAW")
+    return None
+
+# ------------------------------------------------------------
+# Coleta tudo dentro do estado RAW
+# ------------------------------------------------------------
+def t_RAW_end(t):
+    r'"""'
+    t.lexer.pop_state()
+    t.value = "".join(t.lexer.raw_buffer)
+    t.type = "MSTRING"
+    return t
+
+def t_RAW_text(t):
+    r'(.|\n)'
+    t.lexer.raw_buffer.append(t.value)
+
+def t_RAW_error(t):
+    t.lexer.raw_buffer.append(t.value)
+    t.lexer.skip(1)
+
+# ------------------------------------------------------------
+# STRING normal com escapes
+# ------------------------------------------------------------
 def t_STRING(t):
-    r'"[^"\n]*"'
-    t.value = t.value[1:-1]
+    r'"([^"\\]|\\.)*"'
+    raw = t.value[1:-1]
+    t.value = bytes(raw, "utf-8").decode("unicode_escape")
     return t
 
-# Um PATH inicia com / ou contém /
+# ------------------------------------------------------------
+# PATH
+# ------------------------------------------------------------
 def t_PATH(t):
-    r'(\/[\w\.\-\/]*)|([\w\.\-]+\/[\w\.\-\/]*)'
+    r'/[^\s"“”]+|[^\s"“”]+/[^\s"“”]+'
     return t
 
+# ------------------------------------------------------------
+# NAME ou palavra-chave
+# ------------------------------------------------------------
 def t_NAME(t):
     r'[\w\.\-]+'
-    # Se o lexema for palavra-chave, converte o tipo do token
     t.type = reserved.get(t.value, "NAME")
     return t
 
@@ -46,7 +86,9 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 def t_error(t):
-    raise SyntaxError(f"Caractere inválido no lexer: '{t.value[0]}' na posição {t.lexpos}")
+    raise SyntaxError(
+        f"Caractere inválido no lexer: '{t.value[0]}' na posição {t.lexpos}"
+    )
 
 def build_lexer(**kwargs):
     return lex.lex(**kwargs)
