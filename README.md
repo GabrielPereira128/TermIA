@@ -1,7 +1,5 @@
 # TermIA — Terminal Inteligente
 
-**Entrega Parcial + Integração com IA + Interface Gráfica**
-
 **Disciplina:** ECOI26 — Compiladores  
 **Professor:** Walter Aoiama Nagai  
 **Alunos:** Gabriel Pereira Barcellos Sacramento, Rhuan Pablo Malta Lage, Ueld Judah Nunes Nóbrega
@@ -255,4 +253,5 @@ ia codeexplain """
 def soma(a, b):
     return a + b
 """
+
 ```
